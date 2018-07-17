@@ -1,0 +1,375 @@
+---
+title: "Explore and Summarise Data"
+author: "Veena Reddy Hanumanthgari"
+date: "April 8, 2018"
+output: html_document
+---
+This report explores a dataset containing loan data and borrower details for approximately 114,000 listings
+
+```{r global_options, include = TRUE}
+chooseCRANmirror(graphics = FALSE, ind = 1)
+knitr::opts_chunk$set(fig.path = 'Figs/', echo = FALSE, message = FALSE, warning
+                      = FALSE)
+```
+
+
+##Univariate Plots Section:
+``` {r}
+prosper <- read.csv(file = 'prosperLoanData.csv', header = TRUE, sep = ',')
+dim(prosper)
+str(prosper)
+summary(prosper)
+library("ggplot2")
+```
+
+The dataset consists of 10 variables, with almost 114,000 observations.
+
+TERM:
+
+``` {r}
+prosper$Term <- factor(prosper$Term, levels=c(12,36,60), ordered=TRUE)
+ggplot(aes(x = Term), data = prosper) + geom_bar() 
+table(prosper$Term)
+```
+
+Creating another column for year of loan origination:
+
+``` {r}
+library(stringr)
+prosper$LoanOriginationYear <- str_sub(prosper$LoanOriginationDate, -4, -1)
+head(prosper)
+```
+
+LOAN STATUS:
+
+``` {r fig.width=10}
+table(prosper$LoanStatus)
+levels(prosper$LoanStatus)[levels(prosper$LoanStatus) %in% c('Past Due (1-15 days)', 'Past Due (31-60 days)', 'Past Due (61-90 days)', 
+'Past Due (16-30 days)', 'Past Due (91-120 days)', 'FinalPaymentInProgress',
+'Past Due (>120 days)')]<- 'Current'
+#For ease of analysis, I have changed the loan status of all listings 'past due' to 'current'.
+summary(prosper$LoanStatus)
+ggplot(prosper, aes(x = LoanStatus)) + geom_bar() + facet_wrap(~LoanOriginationYear)
+```
+
+For ease of analysis, I have changed the loan status of all listings 'past due' 
+to 'current'.
+By splitting the data over LoanOrginationYear using facet_wrap, we get a clear picture of counts of loan status of the data for each year. 
+For the year 2005, there are only 22 records and hence do not show up on the histogram. And for the year 2014, data is available only for Jan, Feb and March.
+
+PROSPER SCORE:A custom risk score built using historical Prosper data. The score ranges from 1-10, with 10 being the best, or lowest risk score.  Applicable for loans originated after July 2009.
+
+``` {r}
+prosper$ProsperScore <- factor(prosper$ProsperScore, levels=c(1,2,3,4,5,6,7,8,9,10,11), ordered=TRUE)
+ggplot(prosper, aes(x = ProsperScore)) + geom_bar()
+table(prosper$ProsperScore)
+
+
+```
+
+LISTING CATEGORY: The category of the listing that the borrower selected when posting their listing: 
+
+```{r}
+ggplot(prosper, aes(x = ListingCategory)) + geom_bar() + scale_x_continuous(breaks=0:20)
+table(prosper$ListingCategory)
+```
+
+Debt Consolidation is the category for which maximum number of listings were created.Considerable number of listings have NA or other as their Category. Home Improvement and business are the categories mentioned for the next highest 
+number of listings.
+
+BORROWER STATE:
+  
+```{r, fig.width=10}
+ggplot(prosper, aes(x = BorrowerState)) + geom_bar()
+table(prosper$BorrowerState)
+```
+
+As can be seen form the plot,the state wise count for listings is highest for 
+the home state California with Florida, New York and Texas lining up next. Illinois, Georgia and Ohio also have a good count.
+
+LOAN ORIGINAL AMOUNT:
+
+```{r fig.width=14}
+summary(prosper$LoanOriginalAmount)
+ggplot(aes(x = LoanOriginalAmount), data = prosper) + geom_histogram(binwidth = 1000) + scale_x_continuous(limits = c(0, 35000), breaks = seq(0, 35000, 1000))
+```
+
+LOANORIGINATIONYEAR:
+
+```{r}
+ggplot(prosper, aes(x = LoanOriginationYear)) + geom_bar()
+```
+
+There is a clear pattern in the year-wise barplot for the number of loans 
+borrowed each year. Again there a a very few loans for the year 2005, the number has increased for two consecutive years, remained constant for 2008, an then 
+there is a sudden drop in the year 2009. From there on, the count has exponentially been increasing. 
+Note that we have only 3 months data for the year 2014.
+
+INVESTORS:
+
+```{r}
+summary(prosper$Investors)
+ggplot(aes(x = Investors), data = prosper) +
+  geom_histogram() +scale_x_continuous(breaks = seq(1,1200,50))
+```
+
+This data is long-tailed and skewed to the right. The median value for number of investors is 44.
+
+STATED MONTHLY INCOME:
+
+```{r}
+summary(prosper$StatedMonthlyIncome)
+ggplot(data = prosper, aes(x = "", y = StatedMonthlyIncome)) + geom_boxplot() + coord_cartesian(ylim = c(0,25000))
+```
+
+Looking at the summary/boxplot,it is obvious that this data is very dispersed 
+with considerable amount of the data in the outlier section.
+To get a better picture of income counts under the third quartile, we plot a histogram below.
+
+```{r}
+ggplot(aes(x = StatedMonthlyIncome), data = prosper) +
+  geom_histogram(binwidth = 250) + scale_x_continuous(limits = c(0,7000), breaks
+  = seq(0,7000,500))
+```
+
+INCOME RANGE:
+
+```{r}
+summary(prosper$IncomeRange)
+table(prosper$IncomeRange)
+ggplot(prosper, aes(x=IncomeRange)) + geom_bar()
+```
+
+##Univariate Analysis:
+
+###Structure of Dataset:
+
+There are 113,937 listings in the dataset with 10 features(ListingNumber, Term, LoanStatus, ProsperScore, ListingCateogry, BorrowerState, LoanOriginalAmount, 
+LoanOriginationDate, Investors, StatedMonthlyIncome, IncomeVerifiable, IncomeRange).
+The variables Term, LoanStatus, ProsperScore, ListingCategory, BorrowerState, IncomeVerifiable and IncomeRange are factor variables with the following levels.
+
+**Term**: 12,36,60(in months)
+
+**LoanStatus**:Cancelled,Chargedoff,Completed,Current,Defaulted
+
+**ProsperScore**:1-10, with 10 being the best, or lowest risk score.
+ListingCategory:
+0 - Not Available
+1 - Debt Consolidation, 
+2 - Home Improvement, 
+3 - Business, 
+4 - Personal Loan, 
+5 - Student Use, 
+6 - Auto, 
+7- Other, 
+8 - Baby&Adoption, 
+9 - Boat, 
+10 - Cosmetic Procedure, 
+11 - Engagement Ring, 
+12 - Green Loans, 
+13 - Household Expenses, 
+14 - Large Purchases, 
+15 - Medical/Dental, 
+16 - Motorcycle, 
+17 - RV, 
+18 - Taxes, 
+19 - Vacation, 
+20 - Wedding Loans
+
+**BorrowerState**: All US States.
+
+**Income Verifiable**:True,False
+
+**Income Range**:$0, $1-24,999, $25,000-49,999, $50,000-74,999, $75,000-99,999, $100,000+, Notdisplayed, Not employed.
+
+Other observations:
+
+  -Most listings have a term of 3 years.
+  
+  -Most common Listing Category mentioned is Debt Consolidation.
+  
+  -The median value of Loan Original Amount is $6500.
+  
+  -The median value of StatedMonthlyIncome value is $4667.
+  
+  -California is the state with highest number of borrowers given any year.
+
+
+###Main features of interest in the dataset:
+The main features in the dataset are LoanOriginalAmount, BorrowerState and LoanOriginationYear.I would like to observe and analyse the variation of loans 
+for different states and  over the years.
+
+### Created 1 new variable from existing variables in the dataset:
+I created 1 new variable 'LOanOrginationYear' by extracting the year from 'LoanOriginationDate' variable. This is to analyse the variation of some of the other variables over the years. 
+
+###Unusual distributions:
+I have also changed some values of factor variable 'LoanStatus'. All the 
+listings that are past due date but not yet defaulted have been changed to 'Current'.This has been performed just to tidy the data and aid with graphical analysis of Loan Status vs other variables of the listings.
+There are listings with very high Stated Monthly Incomes ranging from 100K-600K.  
+
+
+##Bivariate Plots Section
+
+```{r fig.width=8}
+ggplot(aes(x = ListingCategory, y = LoanOriginalAmount), data = prosper) + geom_point(alpha=1/20, position='jitter') + 
+facet_wrap(~LoanOriginationYear) + scale_x_continuous(breaks = seq(1,20,1))
+```
+
+For years 2005 and 2006, Listing Category is not available.And from 2007 to 
+2010, out of the 7 available categories, most listings in each year have been created for debt consolidation.Home Improvement and Business categories also 
+have a good proportion of listings.
+The count of listings with larger loan amounts have also increased for the years 2013 and 2014. Higher loan amounts can also be seen for other categories in 
+these two years. This shows increased interest of borrowers as well as investors in Prosper.
+
+```{r, fig.width=10}
+ggplot(aes(x = BorrowerState, y = LoanOriginalAmount), data = (prosper)) + geom_point(alpha=1/40, position='jitter')
+```
+
+Most loan amounts, even for the states with highest number of borrowers, are 
+below $10,000. And clear horizontal lines can be seen at the regular numbers 
+like $10K, $15K, $20K and $25K but the dots get lighter going up the y-axis. 
+
+```{r}
+ggplot(aes(x = LoanOriginationYear, y = Investors), data = (prosper)) + geom_point(alpha = 1/40, position='jitter')
+```
+
+
+```{r}
+ggplot(data = prosper, aes(x = LoanOriginationYear, y = LoanOriginalAmount, 
+                           fill=LoanOriginationYear)) + geom_boxplot()
+```
+
+The same trend as the one above for Investors can be seen here for median values except for the year 2012 where there is an unusual drop in median Loan Original Amount.
+
+```{r}
+ggplot(data = subset(prosper, !is.na(ProsperScore)), aes(x = ProsperScore, y = LoanOriginalAmount,fill=ProsperScore)) + geom_boxplot()
+
+```
+
+##Bivariate analysis
+Debt Consolidation is the topmost mentioned Listing Category, followed by Home Improvement and Business. Household Expenses, Large Purchases, Medical/Dental, Motorcycle,Taxes, Vacation and Wedding Loans were also mentioned in other 
+listings but are less popular and have loan amounts $15000 and under.
+
+The drop in median value of LoanOriginalAmount in the year 2012 for which the cause is unknown.There is also a sudden increase in higher loan amounts visible 
+in the outliers area of the plot in the year 2013 and continues in 2014 also.
+
+States with most number of borrowers are CA, NY ,TX and FL. 
+States like AK,ME,ND,WY and IA have the least number of borrowers.
+
+The number of investors followed an increasing trend till 2008 and then 
+decreased for the next three years, which coincides with the period of 
+recession. And then again follows an increasing trend from 2011 onwards.
+
+There is an unusual drop in median Loan Original Amount for the year 2012.
+
+The plot between Loan Amount and ProsperScore for median value looks interesting but Pearon correlation value here is very small. 
+
+##Multivariate Plots Section
+
+```{r, fig.width=14}
+#Creating a summary dataframe for mean and median Loan Original Amounts
+library(dplyr)
+
+prosper.fc_by_BS_year <- prosper %>%
+   filter(!is.na(BorrowerState)) %>%
+   group_by(BorrowerState, LoanOriginationYear) %>%
+   summarise(amount_mean = mean(LoanOriginalAmount), amount_median =             median(as.numeric(LoanOriginalAmount)), n = n()) %>%
+   ungroup() %>%
+   arrange(BorrowerState)
+head(prosper.fc_by_BS_year)
+  
+
+ggplot(subset(prosper.fc_by_BS_year, !is.na(BorrowerState)), aes(x = BorrowerState, y = amount_mean, color = LoanOriginationYear)) + geom_point()
+
+ggplot(subset(prosper.fc_by_BS_year, !is.na(BorrowerState)),
+aes(x = BorrowerState, y = amount_median, color = LoanOriginationYear)) + geom_point()
+
+prosper.median_range <- prosper.fc_by_BS_year %>%
+   filter(!is.na(BorrowerState)) %>%
+   group_by(LoanOriginationYear) %>%
+   summarise(max_median = max(amount_median), min_median = min(amount_median), range_median = max(amount_median) - min(amount_median)) %>%
+   ungroup() %>%
+   arrange(LoanOriginationYear)
+head(prosper.median_range, 11)
+
+ggplot(subset(prosper.fc_by_BS_year, !is.na(BorrowerState)), aes(x = BorrowerState, y=n, color = LoanOriginationYear)) + geom_point()
+ggplot(aes(x = LoanOriginalAmount, y = Investors), data = subset(prosper,(LoanStatus!='Cancelled'))) + geom_point(alpha=1/40) + facet_wrap(~LoanStatus)+ scale_x_continuous(breaks = seq(0,40000,2000))
+cor.test(prosper$LoanOriginalAmount, prosper$Investors, method = c("pearson"))
+```
+
+
+##MultiVariate Analysis:
+Plot 1 features:
+The mean of Loan Original Amount vs  Borrower state plot gives the big picture 
+of all the lisitings' loan amounts  variation for different states in a single graph.The plots for each year show that the mean loan amount has been increasing with each year. But the points for the years 2005-2011 seem to be mixed up. The top 3 years data is nice and clear.Lots of high points can be seen for the years 2007 and 2006 for unexpected states like NH,WY,MD and HI .Lowest points in the plot also belong to these years for the states AR and MN and PA.
+
+Plot2 features:
+The median amount has been moving up the y-axis with each year. The first part that catches our eye in this plot is the points at $10,000 mark on y-axis. 
+Median amounts of two years 2013 and 2014 coincide for some states. Again some unusual peaks can be observed in this plot too for states like AK,DC, HI, KY, NH and WY. Most of these peaks belong to the years 2006 and 2007. Interestingly, 
+the lowest points in the plot also belong to these two years for states like AR,MN,OH, PA and TN. 
+
+Plot3 features:
+The third plot shows the variation of number of borrowers across different 
+states for different years.Over the given time period,the number has been on an increasing trend and growth was remarkable in the past 5 years for states CA, 
+FL, IL, NY and TX. Whereas for the inital few years, the points can be seen 
+mixed up and have small borrower numbers.
+
+Plot4 features:
+Clearly defined lines can be seen at regular numbers and the number of investors is nearly uniformly increasing withn the Loan Amount. Also, a huge proportion of listings have their loan amounts under $10,000 and the density decreases with 
+the Loan Amount.Of all the loan status, current loans have the highest range for Loan Amount. Pearson correlation test shows that there is a small correlation between these two variables.
+
+##Final Plots and Summary
+Plot One:
+
+```{r fig.width=14}
+plot1 <- ggplot(aes(x = LoanOriginalAmount), data = prosper) + geom_histogram(binwidth = 1000) + scale_x_continuous(limits = c(0,35000), 
+breaks = seq(0, 35000, 1000)) + xlab('LoanOriginalAmount in USD')
+
+print(plot1 + ggtitle('LoanOriginalAmount Histogram') + theme(plot.title = element_text(hjust = 0.5)))
+```
+
+Description One:
+$5000, $10,000 and $15,000 are the highest frequent amounts borrowed with an overall median amount of $6500.
+
+
+Plot Two:
+
+```{r}
+plot2 <- ggplot(data = prosper, aes(x = LoanOriginationYear, y = LoanOriginalAmount,fill=LoanOriginationYear)) + geom_boxplot() + ylab('LoanOriginalAmount in USD')
+
+print(plot2 + ggtitle('LoanAmount vs OriginationYear Boxplot') + 
+theme(plot.title = element_text(hjust = 0.5)))
+```
+
+Description Two:
+Median Loan amount touched $5000 for yeara 2007 and then decreased to a minimum value in 2009. From there on, there is a normal increase except for the drop in year 2012 the reason for which remains unknown.Data for year 2014 is available only for 3 months.
+
+Plot Three:
+
+```{r, fig.width=14}
+plot3 <- ggplot(subset(prosper.fc_by_BS_year, !is.na(BorrowerState)), aes(x = BorrowerState, y = amount_median, color = LoanOriginationYear)) + geom_point() + ylab('LoanOriginalAmount in USD')
+
+print(plot3 + ggtitle('Yearly Analysis of Variation of Median LoanAmounts for States') + theme(plot.title = element_text(hjust = 0.5)))
+```
+
+Description Three:
+The median amoount line has been moving up the y-axis with each year.Some
+unusual peaks can be observed in this plot for states like AK,DC, HI, KY, NH and WY. Most of these peaks belong to the years 2006 and 2007. Interestingly, the lowest points in the plot also belong to these two years for states like AR,MN,
+OH, PA and TN. 
+
+##Reflection
+Prosper Loans Dataset contains loan info and borrowers info of nearly 114,000
+listings with 10 variables from around November 2005 to March 2014. I started by understanding the individual variables in the data set, and then I explored interesting questions as I continued to make observations on plots.Eventually, I explored the dependencies of different variables  of borrower data and analysed the yearly progress made by Prosper.
+
+There is noticeable correlation between Number of Investors and Loan Amounts. Smaller loan amounts tend to attract more number of investors than larger ones.Remarkable growth in business can be seen for states like NY, CA, TX and FL.
+Overall growth for all states has seen a jump in the year 2013.$5000, $10,000 
+and $15,000 are the highest frequent amounts borrowed with an overall median amount of $6500.
+
+Some limitations of this analysis include insufficient data for year 2014.It 
+would have been more apt if data was available for atleast three more years and the current year 2018. Sufficient data leads to improved and more useful 
+analysis. 
+Reducing the number of values for categorical variable 'LoanStatus' has made the exploration smooth with reduced complexity.
+As this is a completely new domain to me, I stuck with the basic and easily interpretable variables amongst the many available. To further add to this analysis in future, I would like to analyse data related to defaulted, charged 
+off and cancelled loans to predict the risk factor involved and probe into minimising for these type of listings.
+
+    

@@ -1,0 +1,10 @@
+B C D E F I J Q R T V Z AA
+ListingNumber	Term	LoanStatus	ClosedDate	BorrowerAPR	BorrowerRate	LenderYield	ProsperScore	ListingCategory (numeric)	BorrowerState	LoanOriginalAmount	LoanOriginationDate	LP_CustomerPayments	LP_InterestandFees	LP_ServiceFees	Investors
+
+
+
+2. Analyse charged off and defaulted loans, current, completed loans separately and document conclusions.
+
+Chargedoff
+
+
